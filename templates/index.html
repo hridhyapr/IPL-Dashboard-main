@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Team Performance Dashboard</title>
+
+    <!-- Bootstrap & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="light-mode">
+<div class="dashboard">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <i class="bi bi-trophy-fill text-primary"></i>
+            <div>
+                <h3>Cricket</h3>
+                <span>Performance Analytics</span>
+            </div>
+        </div>
+
+        <nav>
+            <a href="#dashboard" class="active"><i class="bi bi-speedometer2"></i> Dashboard</a>
+            <a href="#analytics"><i class="bi bi-bar-chart-fill"></i> Analytics</a>
+            <a href="#teams"><i class="bi bi-people-fill"></i> Teams</a>
+            <a href="#ranking"><i class="bi bi-award-fill"></i> Rankings</a>
+            <a href="#quality"><i class="bi bi-database-fill"></i> Data Quality</a>
+        </nav>
+
+        <div class="theme-box">
+            <span>Dark Theme</span>
+            <label class="switch">
+                <input type="checkbox" id="themeToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>Cricket Team Performance Dashboard</h1>
+                <p>Professional Match & Franchise Analytics (IPL 2008–2024)</p>
+            </div>
+            <div class="top-actions">
+                <button class="export-btn"><i class="bi bi-download"></i> Export CSV</button>
+            </div>
+        </header>
+
+        <!-- KPI Grid -->
+        <section class="kpi-grid" id="dashboard">
+            <div class="kpi-card">
+                <div class="kpi-icon blue"><i class="bi bi-people-fill"></i></div>
+                <div class="kpi-content"><h5>Total Teams</h5><h2>{{ metrics.total_teams }}</h2></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon green"><i class="bi bi-trophy-fill"></i></div>
+                <div class="kpi-content"><h5>Total Matches</h5><h2>{{ metrics.total_matches }}</h2></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon purple"><i class="bi bi-award-fill"></i></div>
+                <div class="kpi-content"><h5>Most Wins</h5><h2>{{ metrics.most_wins }}</h2></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon orange"><i class="bi bi-percent"></i></div>
+                <div class="kpi-content"><h5>Highest Win Rate</h5><h2>{{ metrics.highest_win_rate }}%</h2></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon cyan"><i class="bi bi-star-fill"></i></div>
+                <div class="kpi-content"><h5>Top Team</h5><h4>{{ metrics.topper }}</h4></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon red"><i class="bi bi-fire"></i></div>
+                <div class="kpi-content"><h5>Avg 1st Innings Target</h5><h2>{{ metrics.avg_target }}</h2></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon green"><i class="bi bi-bullseye"></i></div>
+                <div class="kpi-content"><h5>Chasing Win %</h5><h2>{{ metrics.chasing_win_rate }}%</h2></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon orange"><i class="bi bi-coin"></i></div>
+                <div class="kpi-content"><h5>Toss Advantage %</h5><h2>{{ metrics.toss_advantage }}%</h2></div>
+            </div>
+        </section>
+
+        <!-- Analytics Grid -->
+        <section id="analytics" class="analytics-grid">
+            <div class="chart-card">
+                <div class="card-header"><h3>Top Teams: Bat 1st vs Chasing Wins</h3></div>
+                <div id="subjectChart" class="chart-container"></div>
+            </div>
+            <div class="chart-card">
+                <div class="card-header"><h3>Match Win Method Distribution</h3></div>
+                <div id="gradeChart" class="chart-container"></div>
+            </div>
+            <div class="chart-card">
+                <div class="card-header"><h3>Matches Played vs Win Rate (%)</h3></div>
+                <div id="scatterChart" class="chart-container"></div>
+            </div>
+            <div class="chart-card">
+                <div class="card-header"><h3>Scoring Trend (Avg Target Runs)</h3></div>
+                <div id="lineChart" class="chart-container"></div>
+            </div>
+            <div class="chart-card">
+                <div class="card-header"><h3>Team Tactical Radar</h3></div>
+                <div id="teamRadar" class="chart-container"></div>
+            </div>
+            <div class="chart-card">
+                <div class="card-header"><h3>Performance Correlation Heatmap</h3></div>
+                <div id="heatmapChart" class="chart-container"></div>
+            </div>
+        </section>
+
+        <!-- Team Profile & Comparison -->
+        <section id="teams">
+            <div class="row g-3 align-items-stretch">
+                <div class="col-lg-6">
+                    <div class="profile-card">
+                        <div class="card-header"><h3>Team Profile</h3></div>
+                        <div class="team-select">
+                            <label class="mb-2 fw-semibold">Select Team</label>
+                            <select id="teamSelect" class="form-select">
+                                {% for row in ranking %}
+                                <option value="{{ row.Team }}">{{ row.Team }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="profile-grid">
+                            <div class="profile-item"><span>Rank</span><h3 id="teamRank">-</h3></div>
+                            <div class="profile-item"><span>Tier</span><h3 id="teamGrade">-</h3></div>
+                            <div class="profile-item"><span>Matches</span><h3 id="teamAverage">-</h3></div>
+                            <div class="profile-item"><span>Win Rate</span><h3 id="teamWinRate">-</h3></div>
+                        </div>
+                        <div class="subject-performance">
+                            <h4 class="subject-title">Tactical Performance Breakdown</h4>
+                            <div class="subject-row">
+                                <span>Overall Win %</span>
+                                <div class="progress"><div id="pythonBar" class="progress-bar bg-primary"></div></div>
+                                <span id="pythonScore">0%</span>
+                            </div>
+                            <div class="subject-row">
+                                <span>Defending (Bat 1st) %</span>
+                                <div class="progress"><div id="sqlBar" class="progress-bar bg-success"></div></div>
+                                <span id="sqlScore">0%</span>
+                            </div>
+                            <div class="subject-row">
+                                <span>Chasing (Bowl 1st) %</span>
+                                <div class="progress"><div id="powerbiBar" class="progress-bar bg-warning"></div></div>
+                                <span id="powerbiScore">0%</span>
+                            </div>
+                            <div class="subject-row">
+                                <span>Toss Win Rate %</span>
+                                <div class="progress"><div id="aiBar" class="progress-bar bg-danger"></div></div>
+                                <span id="aiScore">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="profile-card">
+                        <div class="card-header"><h3>Compare Teams Head-to-Head</h3></div>
+                        <div class="compare-grid">
+                            <select id="teamOne" class="form-select">
+                                {% for row in ranking %}
+                                <option value="{{ row.Team }}">{{ row.Team }}</option>
+                                {% endfor %}
+                            </select>
+                            <select id="teamTwo" class="form-select">
+                                {% for row in ranking %}
+                                <option value="{{ row.Team }}" {% if loop.index == 2 %}selected{% endif %}>{{ row.Team }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="compareChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Team Rankings Table -->
+        <section id="ranking" class="table-card">
+            <div class="card-header"><h3>Team Standings & Detailed Statistics</h3></div>
+            <hr class="filter-divider">
+            <div class="filter-bar">
+                <input type="text" id="searchTeam" class="form-control" placeholder="Search Team...">
+                <select id="gradeFilter" class="form-select">
+                    <option value="">All Tiers</option>
+                    <option value="Elite">Elite (≥55%)</option>
+                    <option value="Strong">Strong (50–54%)</option>
+                    <option value="Competitive">Competitive (45–49%)</option>
+                    <option value="Developing">Developing (&lt;45%)</option>
+                </select>
+                <select id="sortBy" class="form-select">
+                    <option value="rank">Sort By Rank</option>
+                    <option value="matches">Sort By Matches</option>
+                    <option value="wins">Sort By Wins</option>
+                    <option value="winrate">Sort By Win Rate</option>
+                    <option value="batfirst">Sort By Bat 1st Wins</option>
+                    <option value="chase">Sort By Chasing Wins</option>
+                    <option value="toss">Sort By Toss Win %</option>
+                </select>
+                <button id="resetFilters" class="btn btn-primary">Reset</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Team</th>
+                            <th>Matches</th>
+                            <th>Wins</th>
+                            <th>Losses</th>
+                            <th>Win Rate</th>
+                            <th>Bat 1st Wins</th>
+                            <th>Chase Wins</th>
+                            <th>Toss Win %</th>
+                            <th>Tier</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in ranking %}
+                        <tr data-tier="{{ row.Tier }}">
+                            <td><strong>#{{ row.Rank }}</strong></td>
+                            <td><strong class="team-label">{{ row.Team }}</strong></td>
+                            <td>{{ row.Matches }}</td>
+                            <td><span class="badge bg-success-subtle text-success fw-bold">{{ row.Wins }}</span></td>
+                            <td><span class="badge bg-danger-subtle text-danger fw-bold">{{ row.Losses }}</span></td>
+                            <td><strong>{{ row.WinRate }}%</strong></td>
+                            <td>{{ row.BatFirstWins }}</td>
+                            <td>{{ row.ChaseWins }}</td>
+                            <td>{{ row.TossWinRate }}%</td>
+                            <td><span class="badge grade grade-{{ row.Tier | lower }}">{{ row.Tier }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Data Quality Section -->
+        <section id="quality" class="quality-card">
+            <div class="card-header"><h3>Data Quality Report (sports.csv)</h3></div>
+            <div class="quality-grid">
+                <div class="quality-box"><h2>{{ quality["Missing Values"] }}</h2><p>Missing Values</p></div>
+                <div class="quality-box"><h2>{{ quality["Duplicate Rows"] }}</h2><p>Duplicate Rows</p></div>
+                <div class="quality-box"><h2>{{ quality.Rows }}</h2><p>Total Matches (Rows)</p></div>
+                <div class="quality-box"><h2>{{ quality.Columns }}</h2><p>Total Features (Columns)</p></div>
+            </div>
+        </section>
+
+        <footer>
+            Cricket Team Performance Dashboard © 2026 • Powered by sports.csv Historical Match Data
+        </footer>
+    </main>
+</div>
+
+<script id="dashboard-data" type="application/json">
+    {{ dashboard_data | tojson | safe }}
+</script>
+<script>
+    const dashboardDataElement = document.getElementById("dashboard-data");
+    window.DASHBOARD_DATA = JSON.parse(dashboardDataElement.textContent);
+</script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
